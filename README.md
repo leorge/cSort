@@ -1,3 +1,7 @@
 # cSort
+Algorithms in src/ subdirectory.
 
-Sorting algorithms in C language.
+    hole_qsort.c ---- Simplest quicksort with a pivot hole.  
+    asymm_qsort.c --- Asymmetric quicksort.
+
+Please visit my [wiki page](https://github.com/leorge/cSort/wiki).

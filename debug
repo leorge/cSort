@@ -1,0 +1,36 @@
+#!/bin/bash
+LANG=en_US.UTF-8; NULL=/dev/null
+
+if which checkScripts > $NULL 2>&1; then
+    check64bits  || exit
+    checkScripts || exit
+else
+    echo 'Please add pathes for scrispts and data to $PATH.'
+    exit
+fi
+
+if [ $# -lt 1 ]; then
+    echo ""
+    echo "usage : $0  Number_of_elements  [filename]"
+    echo ""
+    echo "   ex) $ N=10000; random.awk \$N | ./debug \$N"
+    echo ""
+    exit
+else
+    N=$1; shift
+    if [ $# -eq 0 ]; then
+        data=data$$
+        cat - > data$$      # read data from stdin
+    else
+        data=$1; shift
+    fi
+fi
+
+sort $data > sorted$$
+for k in 3 h a g k; do
+    Release/cSort -N $N -$k $data > tmp$$
+    if ! diff sorted$$ tmp$$ > /dev/null; then
+        echo "-$k option doesn't work."
+    fi
+done
+rm -f data$$ tmp$$ sorted$$
