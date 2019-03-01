@@ -1,5 +1,5 @@
 # cSort
-Algorithms in src/ subdirectory.
+Source codes in src/.
 
     hole_qsort.c ---- Simplest quicksort with a pivot hole.  
     asymm_qsort.c --- Asymmetric quicksort.  
