@@ -13,7 +13,7 @@
 #include "stdlib.h"
 #include "string.h"
 
-#define	copy(a, b)	memcpy((a), (b), size)
+#define copy(a, b)  memcpy((a), (b), size)
 
 extern void asymm_qsort(void *base, size_t nmemb, size_t size, int (*compare)(const void *, const void *));
 
@@ -35,22 +35,22 @@ static int my_comp(const void *p1, const void *p2) {
 void ticket_sort(void *base, size_t nmemb, size_t size, int (*compare)(const void *, const void *)) {
     if (nmemb <= 1) return;
     TICKET *tickets = calloc(sizeof(TICKET), nmemb);
-    TICKET	*tic = tickets;
+    TICKET  *tic = tickets;
     if ( !tic)   // failed to allocate memory
         asymm_qsort(base, nmemb, size, compare);
     else {
         comp = compare;
         char    save[size], *body = base;
-        for (size_t i = 0; i < nmemb; i++) {	// Make an index.
-            tic->body = body;					// Point an array element.
-            tic->key1 = ((TICKET *)body)->key1;	// Copy the first 8 bytes.
-            tic->key2 = ((TICKET *)body)->key2;	// Copy the next 8 bytes.
-            tic->position = i;                 	// record number (zero origin)
+        for (size_t i = 0; i < nmemb; i++) {    // Make an index.
+            tic->body = body;                   // Point an array element.
+            tic->key1 = ((TICKET *)body)->key1; // Copy the first 8 bytes.
+            tic->key2 = ((TICKET *)body)->key2; // Copy the next 8 bytes.
+            tic->position = i;                  // record number (zero origin)
             tic++; body += size;
         }
         asymm_qsort(tickets, nmemb, sizeof(TICKET), my_comp); // Sort the index
         // reorder array elements
-        TICKET	*t;
+        TICKET  *t;
         void    *src = base, *dst;
         tic = tickets; body = base;
         for (size_t i = 0; i < nmemb; i++) {
@@ -60,8 +60,8 @@ void ticket_sort(void *base, size_t nmemb, size_t size, int (*compare)(const voi
                     copy(dst, src = t->body);   // move an element
                     t->body = dst;              // reset the address
                     t = &tickets[((dst = src) - base) / size];   // points the new hole
-                } while (t->body != body);		// cyclic permutation
-                copy((t->body = src), save); 	// restore saved element
+                } while (t->body != body);      // cyclic permutation
+                copy((t->body = src), save);    // restore saved element
             }
             body += size; tic++;
         }

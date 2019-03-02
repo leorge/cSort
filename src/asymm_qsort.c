@@ -74,7 +74,7 @@ static void sort(void *base, size_t nmemb) {
             hole = *middle;     // hole is in the middle of index[]
         }
         // partition
-        char save[length];	// pivot element
+        char save[length];  // pivot element
         copy(save, hole); copy(hole, last);    // save <-- hole <-- last
         char *lo = first,  *hi = (hole = last) - length, *eq = NULL;
         for (int chk; lo < hole; lo += length) {
