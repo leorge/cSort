@@ -3,8 +3,6 @@ LANG=en_US.UTF-8; NULL=/dev/null
 
 if which checkScripts > $NULL 2>&1; then
     check64bits  || exit
-    checkScripts || exit
-    inst_cmd bc setterm || exit
 else
     echo -e "Please setup scripts and data in the following URLs.\n"    \
             "  scripts - https://github.com/leorge/scripts/wiki\n"    \
