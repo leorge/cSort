@@ -1,7 +1,7 @@
 /*
  * tag_sort.c
  *
- *  Indirect asymmetric quicksort.
+ *  Simple indirect sort.
  *
  *  Created on: 2018/03/01
  *      Author: leo
@@ -11,26 +11,27 @@
 #include <string.h>
 
 #define copy(a, b)  memcpy((a), (b), size)
-extern void asymm_qsort(void *base, size_t nmemb, size_t size, int (*compare)(const void *, const void *));
-static int (*comp)(const void *, const void *);
 
+static int (*comp)(const void *, const void *);
 static int my_comp(const void *p1, const void *p2) {
-    return comp(*(const void **)p1, *(const void **)p2);
+    int rtn = comp(*(const void **)p1,  *(const void **)p2);
+    if (! rtn) rtn = *(const void **)p1 > *(const void **)p2? 1 : -1;	// for stability
+    return	rtn;
 }
 
-void tag_sort(void *base, size_t nmemb, size_t size, int (*compare)(const void *, const void *)) {
+void pointer_sort(void *base, size_t nmemb, size_t size, int (*compare)(const void *, const void *)) {
     if (nmemb <= 1) return;
     void    **tags = calloc(sizeof(void *), nmemb); // Allocate an index.
     if ( ! tags)   // failed to allocate memory
-        asymm_qsort(base, nmemb, size, compare);
+        qsort(base, nmemb, size, compare);
     else {
         comp = compare;
         char *src = base;
         void **tag = tags;
-        for (size_t i = 0; i < nmemb; i++) {   // Build up an index.
+        for (size_t i = 0; i < nmemb; i++) {   // Make an index.
             *tag++ = src; src += size;
         }
-        asymm_qsort(tags, nmemb, sizeof(void *), my_comp); // Sort the index
+        qsort(tags, nmemb, sizeof(void *), my_comp); // Sort the index
         // reorder array elements
         char save[size];
         void **t, *dst, *idx;

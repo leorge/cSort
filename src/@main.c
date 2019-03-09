@@ -29,8 +29,8 @@
 /* Functions to test    */
 extern void asymm_qsort(void *base, size_t nmemb, size_t size, int (*compare)(const void *, const void *));
 extern void hole_qsort(void *base, size_t nmemb, size_t size, int (*compare)(const void *, const void *));
+extern void pointer_sort(void *base, size_t nmemb, size_t size, int (*compare)(const void *, const void *));
 extern void tag_sort(void *base, size_t nmemb, size_t size, int (*compare)(const void *, const void *));
-extern void ticket_sort(void *base, size_t nmemb, size_t size, int (*compare)(const void *, const void *));
 
 static void not_sort(void *base, size_t nmemb, size_t size, int (*compare)(const void *, const void *)){}
 
@@ -87,8 +87,8 @@ int main(int argc, char *argv[])
             // aray sort.
             {'3', QSORT3, "qsort(3)", qsort, "qsort(3) in GNU C library."},
             {'a', ASYMMETRIC, "asymm_qsort()", asymm_qsort, "Asymmetric quickSort."},
-            {'g', TAG_SORT, "tag_sort()", tag_sort, "taG sort."},
-            {'k', TICKET_SORT, "ticket_sort()", ticket_sort, "ticKet sort."},
+            {'g', TAG_SORT, "tag_sort()", pointer_sort, "taG sort."},
+            {'k', TICKET_SORT, "ticket_sort()", tag_sort, "ticKet sort."},
             {'h', HOLE, "hole_qsort()", hole_qsort, "Simplest new quickSort with a pivot Hole."},
             {'u', DUMMY_SORT, "not_sort()", not_sort, "Not Sort."},
     };
