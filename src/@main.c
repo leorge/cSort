@@ -25,6 +25,8 @@
 #define ERR     stderr
 #define FALSE   0
 #define TRUE    (! FALSE)
+#define CR      '\r'
+#define LF      '\n'
 
 /* Functions to test    */
 extern void asymm_qsort(void *base, size_t nmemb, size_t size, int (*compare)(const void *, const void *));
@@ -105,6 +107,7 @@ int main(int argc, char *argv[])
     if (prg == NULL) prg = argv[0];
     char    *fin = NULL;            // file name to input
     typedef long INDEX;
+    int     carriage_return = FALSE;
     INDEX   index = 0, idx;
     int     opt;
     size_t  nmemb = 31, size = 0;
@@ -118,7 +121,8 @@ int main(int argc, char *argv[])
             }
             puts(
                 "\n"
-                "\t-N : Number of members. (Default : 31)\n"
+                "\t-N : Number of members. (Default: 31)\n"
+                "\nnote: The first line should be the longest.\n"
             );
             return EXIT_SUCCESS;
             break;
@@ -147,22 +151,24 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    // Read first line to get a record size
+    // Read the first line to get a record size
     char read_buff[1024];
     if (! fgets(read_buff, sizeof(read_buff) - 1, fp)) return EXIT_SUCCESS; // EOF
-    int buflen = strlen(read_buff); // with EOL(End Of Line : LF or CR+LF)
-    if (! isprint((int)read_buff[0])) {         // control character CR, LF, TAB etc.
+    if (! isprint((int)read_buff[0])) {     // not a printable character
         fprintf(ERR, "Use printable characters.\n");
         return EXIT_FAILURE;
-    } else if (size == 0) {
-        length_compare = size = buflen + 1;
-    } else if (buflen >= size - 1) {
-        fprintf(ERR, "Don't use too long data.\n");
+    }
+    p = memchr(read_buff, LF, sizeof(read_buff));   // fgets(3) stores EOL.
+//    size_t    length_to_read = p - read_buff;
+//    size_t data_len;    // length of data before LF
+    if ((size = p - read_buff) && (*--p == CR)) {   // CR + LF at the EOL.
+        carriage_return = TRUE; // for Microsoft OS.
+    }
+    if (size == 0) {
+        fprintf(ERR, "The first line is empty.\n");
         return EXIT_FAILURE;
     }
-    else {
-        length_compare = size;
-    }
+    length_compare = strlen(read_buff); // length of the first string to omit strings after '\0'.
 
     // allocate data area
     char    *srcbuf;          // Work buffer to store all input data
@@ -174,17 +180,16 @@ int main(int argc, char *argv[])
 
     // read remained data
     i = 0;
-    p = srcbuf;
-    buflen--;
+    char *src = srcbuf;
     do {
-        char *q;
-        if ((q = strrchr(read_buff, '\n')) != NULL) *q = '\0';  // chop LF
-        if ((q = strrchr(read_buff, '\r')) != NULL) *q = '\0';  //      CR
-        strncpy(p, read_buff, buflen);
-        i++;
+        size_t l;
+        p = memchr(read_buff, LF, sizeof(read_buff));
+        if ((l = read_buff - p) > size) l = size;
+        memcpy(src, read_buff, l);      // don't use strncpy(3).
+        src += size;
         if (! fgets(read_buff, sizeof(read_buff), fp)) break;       // EOF
-        p += size;
-    } while (i < nmemb);
+    } while (i++ < nmemb);
+    if (fin) fclose(fp);
     if (i <= 1) return EXIT_SUCCESS;
     size_t memsize = (nmemb = i) * size;
     srcbuf = realloc(srcbuf, memsize);
@@ -203,9 +208,17 @@ int main(int argc, char *argv[])
         }
     }
     // output result
-    for (p = srcbuf, i = 0; i++ < nmemb; p += size) fprintf(OUT, "%s\n", p);
-    fflush(OUT);
     fprintf(ERR, "%s %ld\n", info->name,
             (to.tv_sec - from.tv_sec) * 1000000 + (to.tv_nsec - from.tv_nsec) / 1000);
+    for (p = srcbuf, i = 0; i++ < nmemb; p += size) {
+        char    *p1, *p2;
+        for (p1 = p + size; p < p1--;) {    // skip trailing CR, LF, and '\0'
+            if ((*p1 != CR) && (*p1 != LF) && (*p1 != '\0')) break;
+        }
+        for (p2 = p; p2 <= p1;) fputc(*p2++, OUT);
+        if (carriage_return) fputc(CR, OUT);
+        fputc(LF, OUT);
+    }
+    fflush(OUT);
     return EXIT_SUCCESS;
 }
