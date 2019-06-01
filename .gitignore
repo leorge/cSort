@@ -1,6 +1,8 @@
 Release/
 Debug/
+.settings
 cSort.ods
 data*
 tmp*
+.hg*
 .~lock.*
