@@ -10,20 +10,23 @@
 #include <stdlib.h>
 #include <string.h>
 
+extern void asymm_qsort(void *base, size_t nmemb, size_t size, int (*compare)(const void *, const void *));
+
 #define copy(a, b)  memcpy((a), (b), size)
 
 static int (*comp)(const void *, const void *);
 static int my_comp(const void *p1, const void *p2) {
     int rtn = comp(*(const void **)p1,  *(const void **)p2);
-    if (! rtn) rtn = *(const void **)p1 > *(const void **)p2? 1 : -1;	// for stability
-    return	rtn;
+    if (! rtn)  // two elements are equal.
+        rtn = *(const void **)p1 > *(const void **)p2? 1 : -1;
+    return  rtn;
 }
 
 void pointer_sort(void *base, size_t nmemb, size_t size, int (*compare)(const void *, const void *)) {
     if (nmemb <= 1) return;
     void    **tags = calloc(sizeof(void *), nmemb); // Allocate an index.
     if ( ! tags)   // failed to allocate memory
-        qsort(base, nmemb, size, compare);
+        asymm_qsort(base, nmemb, size, compare);
     else {
         comp = compare;
         char *src = base;
@@ -31,7 +34,7 @@ void pointer_sort(void *base, size_t nmemb, size_t size, int (*compare)(const vo
         for (size_t i = 0; i < nmemb; i++) {   // Make an index.
             *tag++ = src; src += size;
         }
-        qsort(tags, nmemb, sizeof(void *), my_comp); // Sort the index
+        asymm_qsort(tags, nmemb, sizeof(void *), my_comp); // Sort the index
         // reorder array elements
         char save[size];
         void **t, *dst, *idx;

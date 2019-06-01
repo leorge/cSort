@@ -13,20 +13,21 @@
 #include "stdlib.h"
 #include "string.h"
 
+extern void asymm_qsort(void *base, size_t nmemb, size_t size, int (*compare)(const void *, const void *));
+
 #define copy(a, b)  memcpy((a), (b), size)
 
 typedef struct {
-    void    *key1, *key2;	// sorting key data
-    void	*body;			// points an array element
-    size_t  position;		// array index for stability
+    void    *key1, *key2;   // sorting key data
+    void    *body;          // points an array element
+    size_t  position;       // array index for stability
 } TICKET;
 
 static int (*comp)(const void *, const void *);
 static int my_comp(const void *p1, const void *p2) {
-    int rtn = comp(p1, p2);	// You have to modify here to adjust your comparison function.
-    if (! rtn) {	// for stability
-        rtn = ((TICKET *)p1)->position > ((TICKET *)p2)->position? 1: -1;	// Note: size_t is unsigned.
-    }
+    int rtn = comp(p1, p2); // You have to modify here to adjust your comparison function.
+    if (! rtn)  // two elements are equal.
+        rtn = ((TICKET *)p1)->position > ((TICKET *)p2)->position? 1: -1;
     return  rtn;
 }
 
@@ -35,7 +36,7 @@ void tag_sort(void *base, size_t nmemb, size_t size, int (*compare)(const void *
     TICKET *tickets = calloc(sizeof(TICKET), nmemb);
     TICKET  *tic = tickets;
     if ( !tic)   // failed to allocate memory
-        qsort(base, nmemb, size, compare);
+        asymm_qsort(base, nmemb, size, compare);
     else {
         comp = compare;
         char    save[size], *body = base;
@@ -46,7 +47,7 @@ void tag_sort(void *base, size_t nmemb, size_t size, int (*compare)(const void *
             tic->position = i;                  // record number (zero origin)
             tic++; body += size;
         }
-        qsort(tickets, nmemb, sizeof(TICKET), my_comp); // Sort the index
+        asymm_qsort(tickets, nmemb, sizeof(TICKET), my_comp); // Sort the index
         // reorder array elements
         TICKET  *t;
         void    *src = base, *dst;
