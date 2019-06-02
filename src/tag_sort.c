@@ -22,7 +22,7 @@ static int my_comp(const void *p1, const void *p2) {
     return  rtn;
 }
 
-void pointer_sort(void *base, size_t nmemb, size_t size, int (*compare)(const void *, const void *)) {
+void tag_sort(void *base, size_t nmemb, size_t size, int (*compare)(const void *, const void *)) {
     if (nmemb <= 1) return;
     void    **tags = calloc(sizeof(void *), nmemb); // Allocate an index.
     if ( ! tags)   // failed to allocate memory
