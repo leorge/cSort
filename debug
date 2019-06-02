@@ -17,6 +17,7 @@ if [ $# -lt 1 ]; then
     echo ""
     exit
 else
+    rm -f data* tmp* sorted*
     N=$1; shift
     if [ $# -eq 0 ]; then
         data=data$$
@@ -27,10 +28,11 @@ else
 fi
 
 sort $data > sorted$$
-for k in 3 h a g k; do
-    Release/cSort -N $N -$k $data > tmp$$
+for i in 3 h a g k; do
+    Release/cSort -N $N -$i $data > tmp$$
     if ! diff sorted$$ tmp$$ > /dev/null; then
-        echo "-$k option doesn't work."
+        echo "-$i option doesn't work."
+    diff tmp$$ sorted$$
+    exit
     fi
 done
-rm -f data$$ tmp$$ sorted$$
