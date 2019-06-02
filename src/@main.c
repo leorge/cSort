@@ -16,8 +16,8 @@
 
 #include <ctype.h>
 #include <time.h>
-#include <stdio.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
 #define CLOCK_TYPE  CLOCK_PROCESS_CPUTIME_ID
@@ -31,8 +31,8 @@
 /* Functions to test    */
 extern void asymm_qsort(void *base, size_t nmemb, size_t size, int (*compare)(const void *, const void *));
 extern void hole_qsort(void *base, size_t nmemb, size_t size, int (*compare)(const void *, const void *));
-extern void pointer_sort(void *base, size_t nmemb, size_t size, int (*compare)(const void *, const void *));
 extern void tag_sort(void *base, size_t nmemb, size_t size, int (*compare)(const void *, const void *));
+extern void ticket_sort(void *base, size_t nmemb, size_t size, int (*compare)(const void *, const void *));
 
 static void not_sort(void *base, size_t nmemb, size_t size, int (*compare)(const void *, const void *)){}
 
@@ -87,21 +87,22 @@ int main(int argc, char *argv[])
     extern  char *optarg;
     INFO *info, test[] = {  // alphabetic order in symbol names of enum for each block.
             // aray sort.
-            {'3', QSORT3, "qsort(3)", qsort, "qsort(3) in GNU C library."},
-            {'a', ASYMMETRIC, "asymm_qsort()", asymm_qsort, "Asymmetric quickSort."},
-            {'g', TAG_SORT, "tag_sort()", pointer_sort, "taG sort."},
-            {'k', TICKET_SORT, "ticket_sort()", tag_sort, "ticKet sort."},
-            {'h', HOLE, "hole_qsort()", hole_qsort, "Simplest new quickSort with a pivot Hole."},
-            {'u', DUMMY_SORT, "not_sort()", not_sort, "Not Sort."},
+            {'3', QSORT3, "qsort(3)", qsort, "qsort(3)"},
+            {'a', ASYMMETRIC, "asymm_qsort()", asymm_qsort, "Asymmetric quicksort"},
+            {'g', TAG_SORT, "tag_sort()", tag_sort, "taG sort"},
+            {'h', HOLE, "hole_qsort()", hole_qsort, "quicksort with a pivot Hole"},
+            {'k', TICKET_SORT, "ticket_sort()", ticket_sort, "ticKet sort"},
+            {'u', DUMMY_SORT, "not_sort()", not_sort, "Not Sort"},
     };
 
     // prepare to analyze command arguments
     qsort(test, sizeof(test) / sizeof(INFO), sizeof(INFO), cmp_info);   // sort a table according to the SORT_TYPE.
     char    *p, optstring[sizeof(test) / sizeof(INFO) + 100];   // enough long
+    char    read_buff[1024];    // for input data string
     size_t  i;
     memset(optstring, 0, sizeof(optstring));
     for (info = test, p = optstring, i = 0; i++ < sizeof(test) / sizeof(INFO); info++) *p++ = (char)info->option;
-    strcat(optstring, "?N:");
+    strcat(optstring, "?N:Z:");
     /**** Analyze command arguments ****/
     char    *prg = strrchr(argv[0], '/') + 1;   // Program name without path
     if (prg == NULL) prg = argv[0];
@@ -121,13 +122,18 @@ int main(int argc, char *argv[])
             }
             puts(
                 "\n"
-                "\t-N : Number of members. (Default: 31)\n"
-                "\nnote: The first line should be the longest.\n"
+                "\t-N xx : Number of elements (Default: 31)\n"
+                "\t-Z xx : siZe of an element\n"
+                "\t\t(Default: length of the first line)\n"
             );
             return EXIT_SUCCESS;
             break;
         case 'N':
             nmemb = strtoul(optarg, NULL, 0);
+            break;
+        case 'Z':
+            i = strtoul(optarg, NULL, 0);
+            size = (i < sizeof(read_buff)) ? i : 0; // Cancel -Z option if the size is too large.
             break;
         default:    // select sorting algorithm
             for (info = test, idx = 0; idx < sizeof(test) / sizeof(INFO); idx++, info++) {
@@ -152,21 +158,24 @@ int main(int argc, char *argv[])
     }
 
     // Read the first line to get a record size
-    char read_buff[1024];
+    memset(read_buff, 0, sizeof(read_buff));
     if (! fgets(read_buff, sizeof(read_buff) - 1, fp)) return EXIT_SUCCESS; // EOF
-    if (! isprint((int)read_buff[0])) {     // not a printable character
+    if (! isprint((int)read_buff[0])) {     // The first character is not printable
         fprintf(ERR, "Use printable characters.\n");
         return EXIT_FAILURE;
     }
     p = memchr(read_buff, LF, sizeof(read_buff));   // fgets(3) stores EOL.
-//    size_t    length_to_read = p - read_buff;
-//    size_t data_len;    // length of data before LF
-    if ((size = p - read_buff) && (*--p == CR)) {   // CR + LF at the EOL.
+    if ((p > read_buff) && (*(p - 1) == CR)) {   // CR + LF at the EOL.
+        p--;    // Point the CR instead of LF
         carriage_return = TRUE; // for Microsoft OS.
     }
-    if (size == 0) {
+    if (p == read_buff) {
         fprintf(ERR, "The first line is empty.\n");
         return EXIT_FAILURE;
+    } else if (! size) {    // The size is not defined by -Z option.
+        size = p - read_buff;
+    } else {    // 0 < size < sizeof(read_buff)
+        read_buff[size] = '\0'; // Terminate the string
     }
     length_compare = strlen(read_buff); // length of the first string to omit strings after '\0'.
 
@@ -187,12 +196,13 @@ int main(int argc, char *argv[])
         if ((l = read_buff - p) > size) l = size;
         memcpy(src, read_buff, l);      // don't use strncpy(3).
         src += size;
+        memset(read_buff, 0, sizeof(read_buff));
         if (! fgets(read_buff, sizeof(read_buff), fp)) break;       // EOF
     } while (i++ < nmemb);
     if (fin) fclose(fp);
-    if (i <= 1) return EXIT_SUCCESS;
-    size_t memsize = (nmemb = i) * size;
-    srcbuf = realloc(srcbuf, memsize);
+    if (i < 1) return EXIT_SUCCESS;     // Output no line if the input is Only one line.
+    else if (i < nmemb) nmemb = i + 1;
+    srcbuf = realloc(srcbuf, nmemb * size);
 
     /*** test ***/
 
