@@ -11,7 +11,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-
 #define copy(a, b)  memcpy((a), (b), length)
 #define MIDDLE      63      // Choose the middle element as a pivot when N <= MIDDLE
 #define MEDIAN3     127     // Median-of-3
