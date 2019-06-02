@@ -19,19 +19,18 @@ extern void asymm_qsort(void *base, size_t nmemb, size_t size, int (*compare)(co
 
 typedef struct {
     void    *key1, *key2;   // sorting key data
-    void    *body;          // points an array element
-    size_t  position;       // array index for stability
+    void    *body;          // refers to an array element
 } TICKET;
 
 static int (*comp)(const void *, const void *);
 static int my_comp(const void *p1, const void *p2) {
     int rtn = comp(p1, p2); // You have to modify here to adjust your comparison function.
     if (! rtn)  // two elements are equal.
-        rtn = ((TICKET *)p1)->position > ((TICKET *)p2)->position? 1: -1;
+        rtn = ((TICKET *)p1)->body > ((TICKET *)p2)->body ? 1: -1;
     return  rtn;
 }
 
-void tag_sort(void *base, size_t nmemb, size_t size, int (*compare)(const void *, const void *)) {
+void ticket_sort(void *base, size_t nmemb, size_t size, int (*compare)(const void *, const void *)) {
     if (nmemb <= 1) return;
     TICKET *tickets = calloc(sizeof(TICKET), nmemb);
     TICKET  *tic = tickets;
@@ -44,7 +43,6 @@ void tag_sort(void *base, size_t nmemb, size_t size, int (*compare)(const void *
             tic->body = body;                   // Point an array element.
             tic->key1 = ((TICKET *)body)->key1; // Copy the first 8 bytes.
             tic->key2 = ((TICKET *)body)->key2; // Copy the next 8 bytes.
-            tic->position = i;                  // record number (zero origin)
             tic++; body += size;
         }
         asymm_qsort(tickets, nmemb, sizeof(TICKET), my_comp); // Sort the index
