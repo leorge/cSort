@@ -44,8 +44,10 @@ rm -f tmp[1-9]*     # delete old tmp$$
 sed -i -e '1,/^@/!d' $0     # Delete data part in this file
 echo "start    : `date -u`" >> $0       # add date
 echo "computer : `uname -norpv`" >> $0
+echo "CPU      : `lscpu | grep 'Model name:' | sed 's/^\S* \S* *//'`" >> $0
 echo "operator : `id -un`" >> $0
-echo "option   : $log2N ${repeat:=1}" >> $0
+echo "log2(N)  : $log2N" >> $0
+echo "repeat   : ${repeat:=1}" >> $0
 
 DATA=data
 for i in `seq 1 $repeat`; do echo "$0 `date` $i/$repeat" >& 2
