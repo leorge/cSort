@@ -33,11 +33,11 @@ static int my_comp(const void *p1, const void *p2) {
 void ticket_sort(void *base, size_t nmemb, size_t size, int (*compare)(const void *, const void *)) {
     if (nmemb <= 1) return;
     TICKET *tickets = calloc(sizeof(TICKET), nmemb);
-    TICKET  *tic = tickets;
-    if ( !tic)   // failed to allocate memory
+    if ( !tickets)   // failed to allocate memory
         asymm_qsort(base, nmemb, size, compare);
     else {
         comp = compare;
+        TICKET  *tic = tickets;
         char    save[size], *body = base;
         for (size_t i = 0; i < nmemb; i++) {    // Build up an index.
             tic->body = body;                   // Point an array element.
